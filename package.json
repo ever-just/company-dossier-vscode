@@ -1,0 +1,77 @@
+{
+  "name": "company-dossier",
+  "displayName": "Company Dossier",
+  "description": "Build structured competitive intelligence dossiers on private companies. Scaffold folder structures, generate YAML frontmatter, create entity profiles, and navigate dossiers with ROUTER.md patterns.",
+  "version": "0.1.0",
+  "publisher": "everjust",
+  "author": {
+    "name": "EverJust"
+  },
+  "license": "MIT",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ever-just/company-dossier"
+  },
+  "homepage": "https://github.com/ever-just/company-dossier",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Snippets",
+    "Other"
+  ],
+  "keywords": [
+    "osint",
+    "competitive-intelligence",
+    "dossier",
+    "due-diligence",
+    "company-research",
+    "business-intelligence",
+    "yaml-frontmatter",
+    "entity-profiles",
+    "intelligence",
+    "research"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "companyDossier.scaffold",
+        "title": "Dossier: Create New Dossier Structure"
+      },
+      {
+        "command": "companyDossier.newEntity",
+        "title": "Dossier: New Entity Profile"
+      },
+      {
+        "command": "companyDossier.addFrontmatter",
+        "title": "Dossier: Add YAML Frontmatter to Current File"
+      },
+      {
+        "command": "companyDossier.generateRouter",
+        "title": "Dossier: Generate ROUTER.md from Files"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "markdown",
+        "path": "./snippets/frontmatter.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.0.0",
+    "typescript": "^5.3.0"
+  },
+  "pricing": "Free"
+}

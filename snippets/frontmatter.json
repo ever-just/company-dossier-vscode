@@ -1,0 +1,110 @@
+{
+  "Entity Profile Frontmatter": {
+    "prefix": "dossier-entity",
+    "body": [
+      "---",
+      "title: \"${1:Entity Name}\"",
+      "type: entity-profile",
+      "entity_type: ${2|person,supplier,competitor,client,product|}",
+      "entity_id: ${3:slug}",
+      "tier: ${4:1}",
+      "confidence: ${5|high,moderate,low,inferred,unverified|}",
+      "last_updated: ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}",
+      "tags: [${6}]",
+      "related_files:",
+      "  - ${7:_data/file.csv}",
+      "---",
+      "",
+      "# ${1:Entity Name}",
+      "",
+      "## Overview",
+      "",
+      "$0"
+    ],
+    "description": "YAML frontmatter for an entity profile (person, supplier, competitor, client)"
+  },
+  "Reference Frontmatter": {
+    "prefix": "dossier-ref",
+    "body": [
+      "---",
+      "title: \"${1:Title}\"",
+      "type: reference",
+      "domain: ${2|corporate,financial,market,product,timeline,brand|}",
+      "confidence: ${3|high,moderate,low|}",
+      "last_updated: ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}",
+      "tags: [${4}]",
+      "---",
+      "",
+      "# ${1:Title}",
+      "",
+      "$0"
+    ],
+    "description": "YAML frontmatter for a reference document (facts, registrations, contacts)"
+  },
+  "Analysis Frontmatter": {
+    "prefix": "dossier-analysis",
+    "body": [
+      "---",
+      "title: \"${1:Title}\"",
+      "type: analysis",
+      "domain: ${2|strategic,financial,competitive,operational|}",
+      "confidence: ${3|high,moderate,low|}",
+      "last_updated: ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}",
+      "depends_on:",
+      "  - ${4:source_file.md}",
+      "tags: [${5}]",
+      "---",
+      "",
+      "# ${1:Title}",
+      "",
+      "$0"
+    ],
+    "description": "YAML frontmatter for analysis (judgment, assessment, thesis)"
+  },
+  "Evidence Frontmatter": {
+    "prefix": "dossier-evidence",
+    "body": [
+      "---",
+      "title: \"${1:Title}\"",
+      "type: evidence",
+      "source_platform: ${2|linkedin,youtube,wayback,usaspending,manual|}",
+      "collection_date: ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}",
+      "confidence: ${3|high,moderate,low|}",
+      "tags: [${4:raw-data}]",
+      "---",
+      "",
+      "# ${1:Title}",
+      "",
+      "$0"
+    ],
+    "description": "YAML frontmatter for evidence (raw data, source material)"
+  },
+  "Map of Content": {
+    "prefix": "dossier-moc",
+    "body": [
+      "---",
+      "title: \"${1:Section} — Map of Content\"",
+      "type: moc",
+      "section: ${2:section_name}",
+      "last_updated: ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}",
+      "---",
+      "",
+      "# ${1:Section}",
+      "",
+      "| File | Description | Priority |",
+      "|------|-------------|----------|",
+      "| $0 | | |"
+    ],
+    "description": "Map of Content navigation file for a dossier section"
+  },
+  "Confidence Tag Inline": {
+    "prefix": "conf-",
+    "body": "[Confidence: ${1|Definitive,High,Moderate,Low,Inferred,Unverified|}]",
+    "description": "Inline confidence tag"
+  },
+  "Finding Row": {
+    "prefix": "dossier-finding",
+    "body": "| ${1:Finding} | ${2:Evidence} | ${3|HIGH,MODERATE,LOW|} | ${4|NEW,CONFIRMS|} |",
+    "description": "Intelligence finding table row"
+  }
+}
