@@ -2,7 +2,7 @@
   "name": "company-dossier",
   "displayName": "Company Dossier — Intelligence Research",
   "description": "Build competitive intelligence dossiers on any company. Enter a URL, get a structured 12-section dossier with website analysis, Wayback history, DNS recon, and tech stack detection.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "EVERJUSTs",
   "author": {
     "name": "EverJust"
@@ -73,6 +73,23 @@
         ]
       }
     ],
+    "configuration": {
+      "title": "Company Dossier",
+      "properties": {
+        "companyDossier.anthropicApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Anthropic API key for AI-powered analysis (console.anthropic.com). Without this, data is collected but LLM synthesis is skipped.",
+          "order": 1
+        },
+        "companyDossier.maxPages": {
+          "type": "number",
+          "default": 50,
+          "description": "Maximum pages to crawl from the target website's sitemap.",
+          "order": 2
+        }
+      }
+    },
     "commands": [
       {
         "command": "companyDossier.research",
@@ -102,5 +119,8 @@
     "@vscode/vsce": "^3.0.0",
     "typescript": "^5.3.0"
   },
-  "pricing": "Free"
+  "pricing": "Free",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.104.1"
+  }
 }

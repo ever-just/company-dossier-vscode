@@ -10,6 +10,7 @@ interface CollectedData {
   wayback?: WaybackData;
   dns?: DnsData;
   tech?: TechStackData;
+  [key: string]: any;
 }
 
 export function generateCorporateFiles(dossierDir: string, companyName: string, data: CollectedData): number {
@@ -167,8 +168,8 @@ ${d.subdomains.length ? d.subdomains.map(s => '- ' + s).join('\n') : 'No subdoma
   // 10_timeline/website_evolution.md
   if (data.wayback && !data.wayback.error) {
     const wb = data.wayback;
-    const firstDate = wb.firstCapture ? `${wb.firstCapture.slice(0,4)}-${wb.firstCapture.slice(4,6)}-${wb.firstCapture.slice(6,8)}` : 'Unknown';
-    const lastDate = wb.lastCapture ? `${wb.lastCapture.slice(0,4)}-${wb.lastCapture.slice(4,6)}-${wb.lastCapture.slice(6,8)}` : 'Unknown';
+    const firstDate = wb.firstCapture || 'Unknown';
+    const lastDate = wb.lastCapture || 'Unknown';
     writeFile(path.join(dossierDir, '10_timeline', 'website_evolution.md'), `---
 title: "Website Evolution"
 type: reference
@@ -188,9 +189,19 @@ last_updated: ${today}
 | PDFs discovered | ${wb.pdfUrls.length} |
 | Deleted pages | ${wb.deletedPages.length} |
 
+## Content Type Distribution
+
+${Object.entries(wb.contentTypeDistribution || {}).map(([type, count]) => `| ${type} | ${count} |`).join('\n') || 'No distribution data.'}
+
+## Site Growth
+
+${wb.siteGrowthSummary || 'No growth data available.'}
+
 ## PDF Documents Found
 
 ${wb.pdfUrls.length ? wb.pdfUrls.map(u => '- ' + u).join('\n') : 'No PDFs found in Wayback captures.'}
+
+${(wb.pdfWaybackUrls || []).length ? '### Wayback PDF Playback URLs\n\n' + wb.pdfWaybackUrls.map(u => '- ' + u).join('\n') : ''}
 
 ## Deleted Pages (Were 200, Now Gone)
 
@@ -221,7 +232,7 @@ ${w?.description || '[Company description — requires manual research]'}
 **Website:** ${w?.url || 'N/A'}
 **CMS:** ${data.tech?.cms || 'Unknown'}
 **Email Provider:** ${data.dns?.emailProvider || 'Unknown'}
-**Wayback First Seen:** ${data.wayback?.firstCapture ? data.wayback.firstCapture.slice(0,4) + '-' + data.wayback.firstCapture.slice(4,6) : 'Unknown'}
+**Wayback First Seen:** ${data.wayback?.firstCapture || 'Unknown'}
 
 ## What's Been Collected (Automated)
 
