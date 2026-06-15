@@ -2,7 +2,7 @@
   "name": "company-dossier",
   "displayName": "Company Dossier — Intelligence Research",
   "description": "Build competitive intelligence dossiers on any company. Enter a URL, get a structured 12-section dossier with website analysis, Wayback history, DNS recon, and tech stack detection.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "publisher": "EVERJUSTs",
   "author": {
     "name": "EverJust"

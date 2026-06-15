@@ -395,141 +395,163 @@ export async function runResearch(
   const domain = new URL(input.url).hostname.replace(/^www\./, '');
 
   // =========================================================================
-  // Phase 1: Scaffold (instant)
+  // Phase 1: Scaffold (instant — no dependencies)
   // =========================================================================
-  progress('[1/9] Scaffolding dossier structure...');
+  progress('[1/7] Scaffolding dossier structure...');
   filesCreated += scaffoldDossier(dossierDir, input.companyName);
 
   // =========================================================================
-  // Phase 2: Website deep crawl — homepage + sitemap + up to 50 pages
+  // Phase 2: PARALLEL COLLECTION — 4 independent streams at once
+  //
+  // Dependency graph:
+  //   Website crawl ──┐
+  //   Wayback CDX  ──┤──→ [wait for all] ──→ Tech stack ──→ LLM ──→ Files
+  //   DNS recon    ──┤
+  //   USASpending  ──┘
+  //
+  // These 4 have ZERO dependencies on each other. Run them all at once.
   // =========================================================================
-  progress('[2/9] Website deep crawl — fetching homepage & sitemap...');
-  let websiteData: WebsiteData | undefined;
-  try {
-    websiteData = await collectWebsite(input.url, progress);
-    if (websiteData.error) {
-      errors.push('Website: ' + websiteData.error);
-    } else {
-      progress(`[2/9] Homepage: "${websiteData.title}" — ${websiteData.pageCount} pages crawled, ${websiteData.sitemapUrls.length} URLs in sitemap`);
+  progress('[2/7] Launching parallel collection: website + Wayback + DNS + public search...');
 
-      // Deep crawl: fetch up to 50 pages from sitemap
-      const maxPages = input.depth === 'quick' ? 5 : input.depth === 'standard' ? 25 : 50;
-      if (websiteData.sitemapUrls.length > 0) {
-        crawledPages = await deepCrawl(websiteData.sitemapUrls, input.url, maxPages, progress);
-      }
-    }
-  } catch (e: any) {
-    errors.push('Website fetch failed: ' + e.message);
-  }
-
-  // =========================================================================
-  // Phase 3: Wayback Machine — 3 CDX queries + PDF discovery
-  // =========================================================================
-  let waybackData: WaybackData | undefined;
-  if (input.depth !== 'quick') {
-    progress('[3/9] Wayback Machine — CDX queries + PDF discovery...');
+  // --- Stream A: Website homepage + sitemap + deep crawl ---
+  const websitePromise = (async (): Promise<WebsiteData | undefined> => {
     try {
-      waybackData = await extendedWayback(domain, progress);
-      if (waybackData.error) {
-        errors.push('Wayback: ' + waybackData.error);
+      progress('  → Website: fetching homepage & sitemap...');
+      const data = await collectWebsite(input.url, (msg) => progress('  → Website: ' + msg));
+      if (data.error) {
+        errors.push('Website: ' + data.error);
+      } else {
+        progress(`  → Website: "${data.title}" — ${data.pageCount} pages crawled, ${data.sitemapUrls.length} sitemap URLs`);
+        // Deep crawl runs as part of this stream (depends on sitemap)
+        const maxPages = input.depth === 'quick' ? 5 : input.depth === 'standard' ? 25 : 50;
+        if (data.sitemapUrls.length > 0) {
+          const pages = await deepCrawl(data.sitemapUrls, input.url, maxPages, (msg) => progress('  → ' + msg));
+          crawledPages = pages;
+        }
       }
+      return data;
+    } catch (e: any) {
+      errors.push('Website fetch failed: ' + e.message);
+      return undefined;
+    }
+  })();
+
+  // --- Stream B: Wayback Machine (3 CDX queries) ---
+  const waybackPromise = (async (): Promise<WaybackData | undefined> => {
+    if (input.depth === 'quick') {
+      progress('  → Wayback: skipped (quick mode)');
+      return undefined;
+    }
+    try {
+      progress('  → Wayback: querying CDX API...');
+      const data = await extendedWayback(domain, (msg) => progress('  → Wayback: ' + msg));
+      if (data.error) { errors.push('Wayback: ' + data.error); }
+      return data;
     } catch (e: any) {
       errors.push('Wayback failed: ' + e.message);
+      return undefined;
     }
-  } else {
-    progress('[3/9] Wayback Machine — skipped (quick mode)');
-  }
+  })();
+
+  // --- Stream C: DNS reconnaissance ---
+  const dnsPromise = (async (): Promise<DnsData | undefined> => {
+    try {
+      progress('  → DNS: querying MX, SPF, DMARC...');
+      const data = await collectDns(input.url);
+      if (data.error) { errors.push('DNS: ' + data.error); }
+      else { progress(`  → DNS: ${data.emailProvider}, ${data.mxRecords.length} MX, ${data.subdomains.length} subdomains`); }
+      return data;
+    } catch (e: any) {
+      errors.push('DNS failed: ' + e.message);
+      return undefined;
+    }
+  })();
+
+  // --- Stream D: USASpending + social profile HEAD probes ---
+  // Social extraction from HTML waits for website crawl, but USASpending + HEAD probes don't
+  const searchPromise = (async (): Promise<SearchData | undefined> => {
+    try {
+      progress('  → Search: querying USASpending + probing social profiles...');
+      // Start with no page content — social extraction from HTML added after website finishes
+      const data = await collectSearch(input.companyName, (msg) => progress('  → Search: ' + msg), []);
+      if (data.error) { errors.push('Search: ' + data.error); }
+      return data;
+    } catch (e: any) {
+      errors.push('Search failed: ' + e.message);
+      return undefined;
+    }
+  })();
+
+  // --- Wait for ALL parallel streams to complete ---
+  progress('[3/7] Waiting for all collection streams...');
+  const [websiteData, waybackData, dnsData, searchData] = await Promise.all([
+    websitePromise, waybackPromise, dnsPromise, searchPromise
+  ]);
+
+  progress(`[3/7] Collection complete — ${errors.length} warnings`);
 
   // =========================================================================
-  // Phase 4: DNS reconnaissance
+  // Phase 4: Tech stack extraction (depends on: website crawl HTML)
   // =========================================================================
-  progress('[4/9] DNS reconnaissance...');
-  let dnsData: DnsData | undefined;
-  try {
-    dnsData = await collectDns(input.url);
-    if (dnsData.error) {
-      errors.push('DNS: ' + dnsData.error);
-    } else {
-      progress(`[4/9] DNS: Email via ${dnsData.emailProvider}, ${dnsData.mxRecords.length} MX records, ${dnsData.subdomains.length} subdomains`);
-    }
-  } catch (e: any) {
-    errors.push('DNS failed: ' + e.message);
-  }
-
-  // =========================================================================
-  // Phase 5: Tech stack extraction from ALL crawled pages
-  // =========================================================================
-  progress('[5/9] Tech stack extraction...');
+  progress('[4/7] Extracting tech stack from all crawled pages...');
   let techData: TechStackData | undefined;
   const allHtml: string[] = [];
   if (websiteData?.rawHtml) { allHtml.push(websiteData.rawHtml); }
   for (const page of crawledPages) {
     if (page.status === 'ok') { allHtml.push(page.html); }
   }
-
   if (allHtml.length > 0) {
-    // Merge tech stack signals from all pages
     const combined = allHtml.join('\n');
     techData = extractTechStack(combined);
-    progress(`[5/9] Tech: ${techData.cms} CMS, ${techData.analyticsIds.length} analytics IDs, ${techData.adPixels.length} ad pixels, ${techData.frameworks.length} frameworks`);
+    progress(`[4/7] Tech: ${techData.cms} CMS, ${techData.analyticsIds.length} analytics, ${techData.adPixels.length} pixels`);
   }
 
-  // =========================================================================
-  // Phase 6: Public search — USASpending + social profiles
-  // =========================================================================
-  progress('[6/9] Public search — USASpending + social profiles...');
-  let searchData: SearchData | undefined;
-  try {
-    const pageContents = allHtml;
-    searchData = await collectSearch(input.companyName, progress, pageContents);
-    if (searchData.error) {
-      errors.push('Search: ' + searchData.error);
+  // Enrich social profiles with links found in crawled HTML (now available)
+  if (searchData && websiteData?.socialLinks) {
+    const existingUrls = new Set(searchData.socialProfiles.map(p => p.url));
+    for (const link of websiteData.socialLinks) {
+      if (!existingUrls.has(link)) {
+        const platform = link.includes('linkedin') ? 'LinkedIn'
+          : link.includes('twitter') || link.includes('x.com') ? 'X/Twitter'
+          : link.includes('facebook') ? 'Facebook'
+          : link.includes('instagram') ? 'Instagram'
+          : link.includes('youtube') ? 'YouTube'
+          : link.includes('tiktok') ? 'TikTok'
+          : link.includes('github') ? 'GitHub'
+          : 'Other';
+        searchData.socialProfiles.push({ platform, url: link, source: 'website-html' });
+      }
     }
-    progress(`[6/9] Search: ${searchData.usaSpendingContracts.length} federal contracts, ${searchData.socialProfiles.length} social profiles`);
-  } catch (e: any) {
-    errors.push('Search failed: ' + e.message);
   }
 
   // =========================================================================
-  // Phase 7: LLM Synthesis — send all data to Claude API
+  // Phase 5: LLM Synthesis (depends on: ALL collected data)
   // =========================================================================
   let llmSynthesis: LLMSynthesis | undefined;
   if (input.apiKey) {
-    progress('[7/9] LLM Synthesis — analyzing all collected data with Claude...');
+    progress('[5/7] LLM Synthesis — sending all collected data to Claude...');
     llmSynthesis = await synthesizeWithLLM(
-      input.companyName,
-      input.url,
-      websiteData,
-      crawledPages,
-      dnsData,
-      techData,
-      waybackData,
-      searchData,
-      input.apiKey,
-      progress
+      input.companyName, input.url,
+      websiteData, crawledPages, dnsData, techData, waybackData, searchData,
+      input.apiKey, progress
     );
   } else {
-    progress('[7/9] LLM Synthesis — skipped (no API key configured)');
+    progress('[5/7] LLM Synthesis — skipped (no API key)');
   }
 
   // =========================================================================
-  // Phase 8: Generate files from synthesized intel
+  // Phase 6: Generate files (depends on: all data + LLM output)
   // =========================================================================
-  progress('[8/9] Generating dossier files...');
+  progress('[6/7] Generating dossier files...');
   filesCreated += generateCorporateFiles(dossierDir, input.companyName, {
-    website: websiteData,
-    wayback: waybackData,
-    dns: dnsData,
-    tech: techData,
-    search: searchData,
-    crawledPages,
-    llmSynthesis
+    website: websiteData, wayback: waybackData, dns: dnsData, tech: techData,
+    search: searchData, crawledPages, llmSynthesis
   });
 
   // =========================================================================
-  // Phase 9: Generate ROUTER.md
+  // Phase 7: ROUTER.md (depends on: files existing)
   // =========================================================================
-  progress('[9/9] Building navigation index...');
+  progress('[7/7] Building navigation index...');
   generateRouter(dossierDir, input.companyName);
   filesCreated++;
 

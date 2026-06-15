@@ -4,6 +4,11 @@ import { DossierSidebarProvider } from './sidebar/provider';
 import { runResearch, ResearchInput } from './agent';
 import { slugify } from './utils';
 
+/** Read the Anthropic API key from VS Code settings. */
+function getAnthropicApiKey(): string {
+  return vscode.workspace.getConfiguration('companyDossier').get<string>('anthropicApiKey', '');
+}
+
 export function activate(context: vscode.ExtensionContext): void {
 
   // === SIDEBAR WEBVIEW ===
@@ -40,9 +45,10 @@ export function activate(context: vscode.ExtensionContext): void {
           return { metadata: { command: 'research' } };
         }
 
-        stream.progress(`Starting research on ${companyName}...`);
+        const apiKey = getAnthropicApiKey();
+        stream.progress(`Starting deep research on ${companyName}...${apiKey ? ' (AI analysis enabled)' : ' (no API key — template mode)'}`);
 
-        const input: ResearchInput = { companyName, url, depth: 'standard' };
+        const input: ResearchInput = { companyName, url, depth: 'standard', apiKey: apiKey || undefined };
         const result = await runResearch(input, root, (msg) => {
           stream.progress(msg);
         });
@@ -52,19 +58,27 @@ export function activate(context: vscode.ExtensionContext): void {
         stream.markdown(`**${result.filesCreated} files** created in \`${companyName} DOSSIER/\`\n\n`);
 
         if (result.websiteData) {
-          stream.markdown(`## Website\n- **Title:** ${result.websiteData.title}\n- **Description:** ${result.websiteData.description}\n- **Sitemap URLs:** ${result.websiteData.sitemapUrls.length}\n\n`);
+          stream.markdown(`## Website\n- **Title:** ${result.websiteData.title}\n- **Description:** ${result.websiteData.description}\n- **Pages crawled:** ${result.websiteData.pageCount}\n- **Sitemap URLs:** ${result.websiteData.sitemapUrls.length}\n- **Emails found:** ${result.websiteData.allEmails?.length || 0}\n- **Phones found:** ${result.websiteData.allPhones?.length || 0}\n\n`);
         }
 
         if (result.waybackData && !result.waybackData.error) {
-          stream.markdown(`## Wayback Machine\n- **Captures:** ${result.waybackData.totalCaptures}\n- **Unique URLs:** ${result.waybackData.uniqueUrls.length}\n- **PDFs Found:** ${result.waybackData.pdfUrls.length}\n- **Deleted Pages:** ${result.waybackData.deletedPages.length}\n\n`);
+          stream.markdown(`## Wayback Machine\n- **Captures:** ${result.waybackData.totalCaptures}\n- **Unique URLs:** ${result.waybackData.uniqueUrls.length}\n- **PDFs Found:** ${result.waybackData.pdfUrls.length}\n- **Deleted Pages:** ${result.waybackData.deletedPages.length}\n${result.waybackData.siteGrowthSummary ? `- **Growth:** ${result.waybackData.siteGrowthSummary}\n` : ''}\n`);
         }
 
         if (result.dnsData && !result.dnsData.error) {
-          stream.markdown(`## Email & DNS\n- **Provider:** ${result.dnsData.emailProvider}\n- **SPF:** ${result.dnsData.spfRecord ? 'Yes' : 'No'}\n- **DMARC:** ${result.dnsData.dmarcRecord ? 'Yes' : 'No'}\n\n`);
+          stream.markdown(`## Email & DNS\n- **Provider:** ${result.dnsData.emailProvider}\n- **SPF:** ${result.dnsData.spfRecord ? 'Yes' : 'No'}\n- **DMARC:** ${result.dnsData.dmarcRecord ? 'Yes' : 'No'}\n- **Subdomains:** ${result.dnsData.subdomains.length}\n\n`);
         }
 
         if (result.techData) {
-          stream.markdown(`## Tech Stack\n- **CMS:** ${result.techData.cms}\n- **Analytics:** ${result.techData.analyticsIds.join(', ') || 'None detected'}\n- **Ad Pixels:** ${result.techData.adPixels.join(', ') || 'None detected'}\n\n`);
+          stream.markdown(`## Tech Stack\n- **CMS:** ${result.techData.cms}\n- **Analytics:** ${result.techData.analyticsIds.join(', ') || 'None detected'}\n- **Ad Pixels:** ${result.techData.adPixels.join(', ') || 'None detected'}\n- **Frameworks:** ${result.techData.frameworks.join(', ') || 'None detected'}\n\n`);
+        }
+
+        if (result.searchData) {
+          stream.markdown(`## Public Search\n- **Federal Contracts:** ${result.searchData.usaSpendingContracts.length} (${result.searchData.usaSpendingAwards} total awards, $${Math.round(result.searchData.usaSpendingTotal).toLocaleString()})\n- **Social Profiles:** ${result.searchData.socialProfiles.length}\n\n`);
+        }
+
+        if (result.llmSynthesis) {
+          stream.markdown(`## AI Analysis\n- Executive Brief: generated\n- SWOT Analysis: generated\n- Key Findings: generated\n- Manual Research Recommendations: generated\n\n`);
         }
 
         if (result.errors.length > 0) {
@@ -81,7 +95,8 @@ export function activate(context: vscode.ExtensionContext): void {
       }
 
       // Default: help
-      stream.markdown(`# Company Dossier Agent\n\nI build structured competitive intelligence dossiers.\n\n**Commands:**\n- \`/research Company Name https://company.com\` — Generate a full dossier\n\n**What I collect:**\n- Website content (title, description, schema.org, social links)\n- Wayback Machine history (captures, deleted pages, PDFs)\n- DNS reconnaissance (email provider, SPF, DMARC)\n- Tech stack (CMS, analytics, ad pixels, CDN)\n\n**What I create:**\n- 12-section folder structure with YAML frontmatter\n- Pre-populated corporate identity, tech stack, and timeline files\n- ROUTER.md for AI agent navigation\n- MOC (Map of Content) per section\n`);
+      const apiKey = getAnthropicApiKey();
+      stream.markdown(`# Company Dossier Agent\n\nI build structured competitive intelligence dossiers.\n\n**API Key Status:** ${apiKey ? 'Configured (AI analysis enabled)' : 'Not set (template mode) — add in Settings > Company Dossier'}\n\n**Commands:**\n- \`/research Company Name https://company.com\` — Generate a full dossier\n\n**What I collect (9-phase pipeline):**\n1. Scaffold dossier structure\n2. Website deep crawl (homepage + sitemap + up to 50 pages)\n3. Wayback Machine (3 CDX queries + PDF discovery)\n4. DNS reconnaissance (MX, SPF, DMARC, subdomains)\n5. Tech stack extraction (CMS, analytics, ad pixels, CDN)\n6. Public search (USASpending + social profile discovery)\n7. AI synthesis (executive brief, SWOT, key findings) *requires API key*\n8. Generate content files\n9. Build ROUTER.md navigation index\n\n**What I create:**\n- 12-section folder structure with YAML frontmatter\n- Pre-populated corporate identity, tech stack, and timeline files\n- Product portfolio from sitemap analysis\n- Social media presence report\n- Federal contracts summary\n- AI-generated executive brief, SWOT, and findings (with API key)\n- ROUTER.md for AI agent navigation\n`);
 
       return { metadata: { command: '' } };
     });
@@ -123,18 +138,21 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
+      const apiKey = getAnthropicApiKey();
+
       await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: `Researching ${companyName}...`,
         cancellable: false
       }, async (progress) => {
-        const input: ResearchInput = { companyName, url, depth: 'standard' };
+        const input: ResearchInput = { companyName, url, depth: 'standard', apiKey: apiKey || undefined };
         const result = await runResearch(input, root, (msg) => {
           progress.report({ message: msg });
         });
 
+        const aiNote = result.llmSynthesis ? ' (with AI analysis)' : '';
         vscode.window.showInformationMessage(
-          `Dossier created: ${result.filesCreated} files in ${companyName} DOSSIER/`,
+          `Dossier created: ${result.filesCreated} files in ${companyName} DOSSIER/${aiNote}`,
           'Open'
         ).then(selection => {
           if (selection === 'Open') {
@@ -170,10 +188,11 @@ export function activate(context: vscode.ExtensionContext): void {
       const section = sectionMap[entityType] || '11_analysis';
 
       // Find dossier root
-      const entries = require('fs').readdirSync(root);
+      const fs = require('fs');
+      const entries = fs.readdirSync(root);
       let dossierRoot = root;
       for (const entry of entries) {
-        if (entry.endsWith('DOSSIER') && require('fs').statSync(path.join(root, entry)).isDirectory()) {
+        if (entry.endsWith('DOSSIER') && fs.statSync(path.join(root, entry)).isDirectory()) {
           dossierRoot = path.join(root, entry);
           break;
         }
