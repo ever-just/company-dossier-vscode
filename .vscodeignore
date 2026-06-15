@@ -6,3 +6,7 @@ tsconfig.json
 node_modules/**
 *.ts
 !out/**
+icon_full.png
+icon_v2_full.png
+icon_v3_full.png
+icon_256.png

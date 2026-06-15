@@ -1,8 +1,8 @@
 {
   "name": "company-dossier",
-  "displayName": "Company Dossier",
-  "description": "Build structured competitive intelligence dossiers on private companies. Scaffold folder structures, generate YAML frontmatter, create entity profiles, and navigate dossiers with ROUTER.md patterns.",
-  "version": "0.1.0",
+  "displayName": "Company Dossier — Intelligence Research",
+  "description": "Build competitive intelligence dossiers on any company. Enter a URL, get a structured 12-section dossier with website analysis, Wayback history, DNS recon, and tech stack detection.",
+  "version": "1.0.0",
   "publisher": "EVERJUSTs",
   "author": {
     "name": "EverJust"
@@ -11,14 +11,18 @@
   "icon": "icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ever-just/company-dossier"
+    "url": "https://github.com/ever-just/company-dossier-vscode"
   },
   "homepage": "https://github.com/ever-just/company-dossier",
+  "galleryBanner": {
+    "color": "#0d1117",
+    "theme": "dark"
+  },
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.93.0"
   },
   "categories": [
-    "Snippets",
+    "Data Science",
     "Other"
   ],
   "keywords": [
@@ -28,30 +32,56 @@
     "due-diligence",
     "company-research",
     "business-intelligence",
-    "yaml-frontmatter",
-    "entity-profiles",
-    "intelligence",
+    "wayback-machine",
+    "dns-recon",
+    "tech-stack",
     "research"
   ],
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "companyDossier",
+          "title": "Company Dossier",
+          "icon": "icon.png"
+        }
+      ]
+    },
+    "views": {
+      "companyDossier": [
+        {
+          "type": "webview",
+          "id": "companyDossier.sidebar",
+          "name": "Research"
+        }
+      ]
+    },
+    "chatParticipants": [
+      {
+        "id": "company-dossier.agent",
+        "name": "dossier",
+        "fullName": "Company Dossier Agent",
+        "description": "Build competitive intelligence dossiers on any company",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "research",
+            "description": "Research a company: /research Company Name https://company.com"
+          }
+        ]
+      }
+    ],
     "commands": [
       {
-        "command": "companyDossier.scaffold",
-        "title": "Dossier: Create New Dossier Structure"
+        "command": "companyDossier.research",
+        "title": "Dossier: Research Company",
+        "icon": "$(search)"
       },
       {
         "command": "companyDossier.newEntity",
         "title": "Dossier: New Entity Profile"
-      },
-      {
-        "command": "companyDossier.addFrontmatter",
-        "title": "Dossier: Add YAML Frontmatter to Current File"
-      },
-      {
-        "command": "companyDossier.generateRouter",
-        "title": "Dossier: Generate ROUTER.md from Files"
       }
     ],
     "snippets": [
@@ -64,12 +94,11 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "package": "vsce package"
+    "watch": "tsc -watch -p ./"
   },
   "devDependencies": {
-    "@types/node": "^25.9.3",
-    "@types/vscode": "^1.85.0",
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.93.0",
     "@vscode/vsce": "^3.0.0",
     "typescript": "^5.3.0"
   },
