@@ -1,11 +1,12 @@
 {
   "name": "company-dossier",
   "displayName": "Company Dossier — Intelligence Research",
-  "description": "Build competitive intelligence dossiers on any company. Enter a URL, get a structured 12-section dossier with website analysis, Wayback history, DNS recon, and tech stack detection.",
+  "description": "Company research & competitive intelligence in VS Code. Enter a company URL and get a structured, multi-section dossier — website crawl, Wayback history, DNS/email recon, tech-stack detection, public records, and AI synthesis (SWOT, executive brief). OSINT for due diligence, sales intelligence, prospect & lead research.",
   "version": "1.2.0",
   "publisher": "EVERJUSTs",
   "author": {
-    "name": "EverJust"
+    "name": "EverJust",
+    "url": "https://companydossier.lol"
   },
   "license": "MIT",
   "icon": "icon.png",
@@ -13,7 +14,10 @@
     "type": "git",
     "url": "https://github.com/ever-just/company-dossier-vscode"
   },
-  "homepage": "https://github.com/ever-just/company-dossier",
+  "homepage": "https://companydossier.lol",
+  "bugs": {
+    "url": "https://github.com/ever-just/company-dossier-vscode/issues"
+  },
   "galleryBanner": {
     "color": "#0d1117",
     "theme": "dark"
@@ -23,19 +27,23 @@
   },
   "categories": [
     "Data Science",
+    "Machine Learning",
     "Other"
   ],
   "keywords": [
+    "company research",
+    "competitive intelligence",
     "osint",
-    "competitive-intelligence",
+    "due diligence",
+    "business intelligence",
+    "company data",
+    "sales intelligence",
     "dossier",
-    "due-diligence",
-    "company-research",
-    "business-intelligence",
-    "wayback-machine",
-    "dns-recon",
-    "tech-stack",
-    "research"
+    "wayback",
+    "dns",
+    "tech stack",
+    "prospect research",
+    "lead research"
   ],
   "activationEvents": [],
   "main": "./out/extension.js",

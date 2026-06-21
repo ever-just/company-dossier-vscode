@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Website & docs
+    url: https://companydossier.lol
+    about: Learn how Company Dossier works and how to use it.
+  - name: Core project (methodology, CLI, MCP)
+    url: https://github.com/ever-just/company-dossier
+    about: The methodology, npm package, and AI integrations.
+  - name: Security report
+    url: https://github.com/ever-just/company-dossier-vscode/security/policy
+    about: Please report vulnerabilities privately.
