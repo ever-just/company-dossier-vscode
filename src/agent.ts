@@ -8,49 +8,23 @@ import { scaffoldDossier } from './generators/scaffold';
 import { generateCorporateFiles } from './generators/corporate';
 import { generateRouter } from './generators/router';
 import { fetchText, sleep, todayISO } from './utils';
+import {
+  ResearchInput,
+  ResearchProgress,
+  CrawledPage,
+  LLMSynthesis,
+  ResearchResult,
+} from './types';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export interface ResearchInput {
-  companyName: string;
-  url: string;
-  depth: 'quick' | 'standard' | 'deep';
-  apiKey?: string;
-}
-
-export interface ResearchProgress {
-  (message: string): void;
-}
-
-export interface CrawledPage {
-  url: string;
-  html: string;
-  title: string;
-  status: 'ok' | 'error';
-}
-
-export interface LLMSynthesis {
-  executiveBrief: string;
-  swotAnalysis: string;
-  keyFindings: string;
-  manualResearchNeeded: string;
-}
-
-export interface ResearchResult {
-  companyName: string;
-  dossierPath: string;
-  filesCreated: number;
-  websiteData?: WebsiteData;
-  waybackData?: WaybackData;
-  dnsData?: DnsData;
-  techData?: TechStackData;
-  searchData?: SearchData;
-  crawledPages: CrawledPage[];
-  llmSynthesis?: LLMSynthesis;
-  errors: string[];
-}
+// Re-export the shared pipeline types so existing importers can keep using
+// `from './agent'`. New code should prefer importing from './types'.
+export {
+  ResearchInput,
+  ResearchProgress,
+  CrawledPage,
+  LLMSynthesis,
+  ResearchResult,
+};
 
 // ---------------------------------------------------------------------------
 // Deep page crawler — fetches up to `maxPages` from sitemap

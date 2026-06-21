@@ -39,7 +39,8 @@ npx vsce package
 | Path | What lives here |
 |------|-----------------|
 | `src/extension.ts` | Activation, command/chat/sidebar registration |
-| `src/agent.ts` | Orchestrator + shared research types + LLM synthesis |
+| `src/agent.ts` | Orchestrator (`runResearch`) + optional LLM synthesis |
+| `src/types.ts` | Shared pipeline types (`ResearchInput`, `ResearchResult`, …) |
 | `src/collectors/` | Public-data collectors (website, wayback, dns, techstack, search) |
 | `src/generators/` | File generators (scaffold, corporate, router) |
 | `src/utils.ts` | Shared helpers (fetch, fs, slugify, dates) |
@@ -55,7 +56,7 @@ See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) before making structural chan
    write files.**
 2. Wrap failures so they surface as warnings (push to `errors`) rather than throwing.
 3. Wire it into the parallel collection block in `src/agent.ts` and add its result
-   to `ResearchResult`.
+   to `ResearchResult` in `src/types.ts`.
 4. Feed the new data into `generators/corporate.ts` and, if relevant, the LLM
    synthesis context.
 

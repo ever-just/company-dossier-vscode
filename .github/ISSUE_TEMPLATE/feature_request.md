@@ -1,20 +1,18 @@
 ---
 name: Feature request
-about: Suggest an idea for this project
-title: ''
-labels: ''
-assignees: ''
-
+about: Suggest an idea or improvement for the extension
+title: "[feature] "
+labels: enhancement
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+**Problem / motivation**
+What are you trying to do, and what's getting in the way?
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+**Proposed solution**
+A clear description of what you'd like to happen.
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+**Alternatives considered**
+Any other approaches you've thought about.
 
 **Additional context**
-Add any other context or screenshots about the feature request here.
+Anything else (examples, screenshots, related companies/sources).

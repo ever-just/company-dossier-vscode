@@ -1,15 +1,29 @@
+# Source & build config (compiled output in out/ is what ships)
+src/**
+*.ts
+tsconfig.json
+
+# Dev tooling & dependencies
 .vscode/**
 .vscode-test/**
-src/**
-.gitignore
-tsconfig.json
 node_modules/**
-*.ts
-!out/**
-assets/**
+package-lock.json
+*.vsix
+
+# Repo meta & contributor docs (not needed in the packaged extension)
+.git/**
+.gitignore
+.vscodeignore
+.github/**
 docs/**
+assets/**
+AGENTS.md
 CONTRIBUTING.md
 CODE_OF_CONDUCT.md
 SECURITY.md
-AGENTS.md
-.github/**
+
+# Keep the compiled output even though *.ts is excluded above
+!out/**
+
+# What DOES ship: out/, icon.png, snippets/, package.json, README.md,
+# CHANGELOG.md, LICENSE — none are listed here, so they are included.
