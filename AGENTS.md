@@ -13,15 +13,16 @@ navigable Markdown dossier into the workspace. Public sources only.
 - Website / docs: https://companydossier.lol
 
 ## Layout
-- `src/extension.ts` — activation, command registration, wiring.
+- `src/extension.ts` — activation, command/chat/sidebar registration, wiring.
 - `src/sidebar/provider.ts` — the webview sidebar (input UI, progress).
-- `src/agent.ts` — the chat participant `@dossier /research` and orchestration.
+- `src/agent.ts` — the `runResearch` orchestrator and optional Claude synthesis.
+- `src/types.ts` — shared pipeline contract (`ResearchInput`, `ResearchResult`, etc.).
 - `src/collectors/` — independent, side-effect-light data collectors:
   `website.ts` (crawl), `wayback.ts` (history), `dns.ts` (DNS/email recon),
   `techstack.ts` (tech detection), `search.ts` (public search).
 - `src/generators/` — turn collected data into files: `scaffold.ts` (folder structure),
   `router.ts` (ROUTER/index), `corporate.ts` (section rendering).
-- `src/utils.ts` — shared helpers.
+- `src/utils.ts` — shared helpers (fetch, fs, slugify, dates).
 
 ## Build / run
 - Install: `npm install`
@@ -29,10 +30,11 @@ navigable Markdown dossier into the workspace. Public sources only.
 - Debug: open in VS Code, press F5 (Extension Development Host).
 
 ## Output contract
-A dossier is a folder of Markdown files organized into the nine sections
-(Overview & identity, People & org chart, Hiring radar, Money trail, Locations,
-Tech fingerprint, News & timeline, Relationship web, Risk flags), plus a ROUTER/index.
-Every derived claim should be source-attributed.
+A dossier is a folder of Markdown files organized into 12 numbered sections
+(corporate, people, products, suppliers, customers, competitors, financials,
+marketing, brand, timeline, analysis, industry), plus `README.md`, a `ROUTER.md`
+question→file index, and `_meta`/`_data`/`_assets`/`_evidence` support folders.
+Every file carries YAML frontmatter; every derived claim should be source-attributed.
 
 ## Conventions for changes
 - Keep collectors free of UI/VS Code coupling where possible (mirrors the npm package core).

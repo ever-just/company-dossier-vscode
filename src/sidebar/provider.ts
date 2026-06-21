@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { runResearch, ResearchInput } from '../agent';
+import { runResearch } from '../agent';
+import { ResearchInput } from '../types';
 
 export class DossierSidebarProvider implements vscode.WebviewViewProvider {
 

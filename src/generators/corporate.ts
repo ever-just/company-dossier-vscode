@@ -5,7 +5,7 @@ import { WaybackData } from '../collectors/wayback';
 import { DnsData } from '../collectors/dns';
 import { TechStackData } from '../collectors/techstack';
 import { SearchData } from '../collectors/search';
-import { CrawledPage, LLMSynthesis } from '../agent';
+import { CrawledPage, LLMSynthesis } from '../types';
 
 interface CollectedData {
   website?: WebsiteData;

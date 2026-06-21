@@ -3,6 +3,11 @@
 All notable changes to the Company Dossier VS Code extension are documented here.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+- Repo housekeeping: extracted the shared pipeline contract into `src/types.ts`
+  (decoupling generators from the orchestrator), tidied docs, and tightened
+  `.vscodeignore`. No change to runtime behavior.
+
 ## [1.2.0]
 - Parallel collection with dependency-aware execution order (faster dossiers).
 

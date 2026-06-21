@@ -41,7 +41,8 @@ and chat participant), with `agent.ts` as the orchestrator.
 |------|----------------|
 | `src/extension.ts` | Activation. Registers the sidebar provider, chat participant (`@dossier /research`), and commands (`companyDossier.research`, `companyDossier.newEntity`). |
 | `src/sidebar/provider.ts` | Webview UI entry point. Collects input and calls `runResearch`, streaming progress back to the panel. |
-| `src/agent.ts` | Orchestrator. Defines the shared research types (`ResearchInput`, `ResearchResult`, `LLMSynthesis`, etc.), runs the 7-phase pipeline, and performs optional Claude synthesis. |
+| `src/agent.ts` | Orchestrator. Runs the 7-phase pipeline and performs optional Claude synthesis. Re-exports the shared types from `types.ts` for convenience. |
+| `src/types.ts` | Shared pipeline contract (`ResearchInput`, `ResearchResult`, `CrawledPage`, `LLMSynthesis`, `ResearchProgress`). Kept separate so generators depend on the data shape, not the orchestrator. |
 | `src/collectors/*` | Pure data collection from **public** sources. Each module exports a typed `*Data` interface and a `collect*`/`extract*` function. No file writes. |
 | `src/generators/*` | Turn collected data into files on disk. Each exports a `generate*`/`scaffold*` function. No network calls. |
 | `src/utils.ts` | Shared helpers: `fetchText`, `fetchJSON`, `mkdirp`, `writeFile`, `slugify`, `todayISO`, `sleep`. |

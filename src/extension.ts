@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { DossierSidebarProvider } from './sidebar/provider';
-import { runResearch, ResearchInput } from './agent';
+import { runResearch } from './agent';
+import { ResearchInput } from './types';
 import { slugify } from './utils';
 
 /** Read the Anthropic API key from VS Code settings. */
