@@ -1,71 +1,69 @@
-# Company Dossier
+# Company Dossier — Intelligence Research
 
-Build structured competitive intelligence dossiers on private companies — right from VS Code.
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/EVERJUSTs.company-dossier?label=VS%20Code%20Marketplace&color=0d1117)](https://marketplace.visualstudio.com/items?itemName=EVERJUSTs.company-dossier)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/EVERJUSTs.company-dossier?color=0d1117)](https://marketplace.visualstudio.com/items?itemName=EVERJUSTs.company-dossier)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+
+Turn any company URL into a structured competitive-intelligence dossier — without leaving VS Code. Company Dossier crawls the live site, reconstructs its history from the Wayback Machine, fingerprints DNS/email infrastructure and the tech stack, pulls public records, and (optionally) uses Claude to synthesize an executive brief, SWOT, and key findings into a navigable, agent-friendly folder of markdown.
 
 ## Features
 
-### Scaffold a Complete Dossier Structure
-`Ctrl+Shift+P` → **Dossier: Create New Dossier Structure**
+- **One-input research** — give a company name + URL, get a complete dossier.
+- **Live website crawl** — homepage, sitemap, and up to 50 prioritized pages (about, team, products, pricing, contact, news).
+- **Wayback history** — multi-query CDX recon: total captures, unique URLs, archived PDFs, and deleted pages.
+- **DNS & email recon** — MX provider, SPF, DMARC, subdomains, verification tokens.
+- **Tech-stack detection** — CMS, frameworks, CDN, analytics IDs, GTM, and ad pixels.
+- **Public records** — USASpending federal contracts and discovered social profiles.
+- **AI synthesis (optional)** — executive brief, SWOT, ranked findings, and "manual research needed", grounded in collected evidence (requires an Anthropic API key).
+- **Structured output** — a 12-section dossier with YAML frontmatter, `_MOC.md` maps of content, and a `ROUTER.md` so AI agents can navigate in two reads.
+- **Public data only** — no logins, no scraping behind authentication.
 
-Creates the full 12-section dossier folder tree with:
-- 30+ directories organized by intelligence category
-- README.md with navigation table
-- ROUTER.md skeleton (question-to-file lookup for AI agents)
-- _MOC.md (Map of Content) for each section
-- _data/README.md for CSV schema documentation
-- _meta/ files (methodology, confidence legend)
-- CHANGELOG.md
+## Install
 
-### Create Entity Profiles
-`Ctrl+Shift+P` → **Dossier: New Entity Profile**
+**From the Marketplace**
 
-Generate pre-formatted markdown files for:
-- **People** (CEO, team members) → `2_people/profiles/`
-- **Suppliers** (manufacturer partners) → `4_suppliers/profiles/`
-- **Competitors** → `6_competitors/profiles/`
-- **Clients** → `5_customers/`
-- **Products** → `3_products/`
+1. Open VS Code → Extensions (`Ctrl/Cmd+Shift+X`).
+2. Search for **Company Dossier — Intelligence Research**.
+3. Click **Install**. Or [open it on the Marketplace](https://marketplace.visualstudio.com/items?itemName=EVERJUSTs.company-dossier).
 
-Each profile includes YAML frontmatter with entity type, confidence level, and related files.
+**From source**
 
-### Add YAML Frontmatter
-`Ctrl+Shift+P` → **Dossier: Add YAML Frontmatter to Current File**
+```bash
+git clone https://github.com/ever-just/company-dossier-vscode
+cd company-dossier-vscode
+npm install
+npm run compile
+```
 
-Adds structured metadata to any markdown file. Choose from 5 types:
-- `reference` — facts, registrations, contacts
-- `analysis` — judgments, assessments, theses
-- `entity-profile` — person, supplier, competitor, client
-- `evidence` — raw data, source material
-- `moc` — Map of Content navigation file
+Then press `F5` in VS Code to launch an Extension Development Host, or package a `.vsix` with `npx vsce package` and install it via Extensions → "Install from VSIX…".
 
-### Generate ROUTER.md
-`Ctrl+Shift+P` → **Dossier: Generate ROUTER.md from Files**
+## Usage
 
-Automatically scans your dossier and generates a question-to-file lookup table. Maps natural-language questions to exact file paths so AI agents can navigate in 2 reads.
+Open a folder in VS Code first — dossiers are written into the open workspace.
 
-### Snippets
+- **Sidebar view** — click the Company Dossier icon in the Activity Bar, enter a company name + URL, and run the research pipeline with live progress.
+- **Chat participant** — in the Chat view (Copilot Chat), type:
+  ```
+  @dossier /research Acme Corp https://acme.com
+  ```
+  Results stream back inline with a button to open the generated dossier.
+- **Command Palette** (`Ctrl/Cmd+Shift+P`):
+  - **Dossier: Research Company** — prompts for name + URL, then runs the full pipeline.
+  - **Dossier: New Entity Profile** — scaffolds a profile (person, supplier, competitor, client, product) into the right section.
 
-Type these prefixes in any markdown file:
+**Optional AI synthesis:** add your key in Settings → **Company Dossier → Anthropic API Key** (`companyDossier.anthropicApiKey`). Without a key, data is still collected and written; only the LLM synthesis step is skipped. Tune crawl depth with `companyDossier.maxPages`.
 
-| Prefix | What it inserts |
-|--------|----------------|
-| `dossier-entity` | Full entity profile frontmatter + template |
-| `dossier-ref` | Reference document frontmatter |
-| `dossier-analysis` | Analysis document frontmatter |
-| `dossier-evidence` | Evidence document frontmatter |
-| `dossier-moc` | Map of Content template |
-| `conf-` | Inline confidence tag `[Confidence: High]` |
-| `dossier-finding` | Intelligence finding table row |
+## Output
 
-## The Dossier Structure
+Each run creates a `"<Company> DOSSIER/"` folder in your workspace:
 
 ```
-COMPANY DOSSIER/
+<Company> DOSSIER/
 ├── README.md              ← Landing page
-├── ROUTER.md              ← AI agent navigation (question → file)
+├── ROUTER.md              ← AI-agent navigation (question → file)
 ├── CHANGELOG.md
 ├── _meta/                 ← Methodology, confidence scale
-├── _data/                 ← All CSVs (single source of truth)
+├── _data/                 ← Structured data (CSVs)
 ├── _assets/               ← Photos & PDFs
 ├── _evidence/             ← Raw source data
 ├── 1_corporate/           ← Identity, legal, certifications
@@ -82,15 +80,25 @@ COMPANY DOSSIER/
 └── 12_industry/           ← Market context
 ```
 
-## Methodology
+Every file carries YAML frontmatter (type, confidence, last-updated). With an API key, the analysis section is populated with an executive brief, SWOT, key findings, and a manual-research checklist.
 
-This extension implements the [Company Dossier methodology](https://github.com/ever-just/company-dossier) — a 7-phase research pipeline for building intelligence packages using AI agents and OSINT tools.
+## Also available as
 
-## Requirements
+Company Dossier is part of a larger ecosystem:
 
-- VS Code 1.85+
-- No other dependencies
+- **Website** — [companydossier.lol](https://companydossier.lol)
+- **npm package** — [`company-dossier`](https://www.npmjs.com/package/company-dossier) — run it from the terminal:
+  ```bash
+  npx company-dossier <company>
+  ```
+- **Core repo & methodology** — [github.com/ever-just/company-dossier](https://github.com/ever-just/company-dossier)
+
+## Documentation
+
+- [Architecture](./docs/ARCHITECTURE.md) — the collector → generator → sidebar flow.
+- [AGENTS.md](./AGENTS.md) — how an AI agent should understand and extend this repo.
+- [Contributing](./CONTRIBUTING.md) · [Code of Conduct](./CODE_OF_CONDUCT.md) · [Security](./SECURITY.md) · [Changelog](./CHANGELOG.md)
 
 ## License
 
-MIT
+[MIT](./LICENSE) © EverJust
