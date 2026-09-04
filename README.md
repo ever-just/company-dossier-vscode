@@ -1,119 +1,108 @@
-# Company Dossier — Intelligence Research
+# Company Dossier for VS Code
 
-> Turn any company URL into a structured competitive-intelligence dossier — without leaving VS Code.
+Company research and competitive intelligence inside your editor — a sourced dossier without leaving the workspace.
 
-[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/EVERJUSTs.company-dossier?label=Marketplace&color=0d1117)](https://marketplace.visualstudio.com/items?itemName=EVERJUSTs.company-dossier)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/EVERJUSTs.company-dossier?label=Installs&color=0d1117)](https://marketplace.visualstudio.com/items?itemName=EVERJUSTs.company-dossier)
-[![Rating](https://img.shields.io/visual-studio-marketplace/r/EVERJUSTs.company-dossier?label=Rating&color=0d1117)](https://marketplace.visualstudio.com/items?itemName=EVERJUSTs.company-dossier&ssr=false#review-details)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+**Status:** Production · v1.2.0 on the Marketplace · public · MIT
+
+[![marketplace](https://img.shields.io/visual-studio-marketplace/v/EVERJUSTs.company-dossier?style=flat&color=1D1D1F&label=marketplace)](https://marketplace.visualstudio.com/items?itemName=EVERJUSTs.company-dossier)
+[![license](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat)](LICENSE)
+
+[Install from the Marketplace](https://marketplace.visualstudio.com/items?itemName=EVERJUSTs.company-dossier) ·
+[Product site](https://companydossier.lol) ·
+[Core repo and methodology](https://github.com/ever-just/company-dossier) ·
+[Architecture](docs/ARCHITECTURE.md)
+
+|  |  |
+|---|---|
+| **What it is** | A VS Code extension that turns a company name and URL into a 12-section markdown dossier |
+| **Who it's for** | Developers, founders and analysts who already live in the editor |
+| **Live at** | [Marketplace](https://marketplace.visualstudio.com/items?itemName=EVERJUSTs.company-dossier) · [companydossier.lol](https://companydossier.lol) |
+| **Stack** | TypeScript · VS Code Extension API ≥1.93 · Anthropic SDK (optional) · no backend |
+| **Status** | Production · v1.2.0 · free · public sources only |
+
+## The problem it solves
+
+Company research happens in a browser and lands in a document nobody opens again. You lose the
+context of the work you were actually doing, and the output is a wall of prose with no structure
+an editor, a diff, or an AI agent can use.
+
+This extension keeps the research where the work is. Type a company name and a URL into the
+sidebar, or ask the chat participant, and it crawls the live site, reconstructs the site's
+history from the Wayback Machine, fingerprints DNS and the tech stack, pulls public records, and
+writes a navigable folder of Markdown straight into your workspace — versioned with everything
+else, greppable, and readable by the agents already in your editor. Public sources only, no
+login, no scraping behind authentication.
 
 ## What it does
 
-Give Company Dossier a company name and URL. It crawls the live site, reconstructs its
-history from the Wayback Machine, fingerprints DNS/email infrastructure and the tech stack,
-pulls public records, and — optionally — uses Claude to synthesize an executive brief, SWOT,
-and ranked findings. The result is a navigable, agent-friendly folder of Markdown written
-right into your workspace. Public sources only.
+- **One input, whole pipeline** — a company name plus a URL runs all seven phases.
+- **Crawls the live site** — homepage, sitemap, and up to 50 prioritised pages (about, team,
+  products, pricing, contact, news).
+- **Reconstructs history** — multi-query Wayback CDX recon: total captures, unique URLs,
+  archived PDFs, and pages that were deleted.
+- **Fingerprints infrastructure** — MX provider, SPF, DMARC, subdomains, verification tokens,
+  CMS, frameworks, CDN, analytics IDs, GTM and ad pixels.
+- **Synthesises with Claude, optionally** — executive brief, SWOT, ranked findings, and a
+  "manual research needed" checklist, grounded in the collected evidence. Skipped without a key;
+  collection still runs.
+- **Writes for agents as well as people** — YAML frontmatter on every file, `_MOC.md` maps of
+  content, and a `ROUTER.md` so an agent answers a question in two reads.
 
-## Features
+## Quickstart
 
-- **One-input research** — give a company name + URL, get a complete dossier.
-- **Live website crawl** — homepage, sitemap, and up to 50 prioritized pages (about, team, products, pricing, contact, news).
-- **Wayback history** — multi-query CDX recon: total captures, unique URLs, archived PDFs, and deleted pages.
-- **DNS & email recon** — MX provider, SPF, DMARC, subdomains, verification tokens.
-- **Tech-stack detection** — CMS, frameworks, CDN, analytics IDs, GTM, and ad pixels.
-- **Public records** — USASpending federal contracts and discovered social profiles.
-- **AI synthesis (optional)** — executive brief, SWOT, ranked findings, and "manual research needed", grounded in collected evidence (requires an Anthropic API key).
-- **Structured output** — a 12-section dossier with YAML frontmatter, `_MOC.md` maps of content, and a `ROUTER.md` so AI agents can navigate in two reads.
-- **Public data only** — no logins, no scraping behind authentication.
+Install from the Marketplace, open a folder (dossiers are written into the open workspace), then
+use the sidebar, the chat participant, or the Command Palette:
 
-## Install
+```
+@dossier /research Acme Corp https://acme.com
+```
 
-**From the Marketplace**
-
-1. Open VS Code → Extensions (`Ctrl/Cmd+Shift+X`).
-2. Search for **Company Dossier — Intelligence Research**.
-3. Click **Install**, or [open it on the Marketplace](https://marketplace.visualstudio.com/items?itemName=EVERJUSTs.company-dossier).
-
-**From source**
+To run it from source:
 
 ```bash
-git clone https://github.com/ever-just/company-dossier-vscode
-cd company-dossier-vscode
-npm install
-npm run compile
+git clone https://github.com/ever-just/company-dossier-vscode && cd company-dossier-vscode
+npm install && npm run compile     # then press F5 for an Extension Development Host
+npx vsce package                   # or build a .vsix to install manually
 ```
 
-Then press `F5` in VS Code to launch an Extension Development Host, or package a `.vsix`
-with `npx vsce package` and install it via Extensions → "Install from VSIX…".
+## How it works
 
-## Usage
+`agent.ts` is the orchestrator. Both entry points — the sidebar webview and the chat participant
+— hand it a `ResearchInput`, it fans out to the collectors in parallel, optionally passes the
+collected evidence to Claude for synthesis, then drives the generators that write the folder
+tree, the content files and the router index. Collectors never write; generators never fetch.
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) has the full diagram.
 
-Open a folder in VS Code first — dossiers are written into the open workspace.
-
-- **Sidebar view** — click the Company Dossier icon in the Activity Bar, enter a company
-  name + URL, pick a depth, and run the pipeline with live progress.
-- **Chat participant** — in the Chat view (Copilot Chat), type:
-  ```
-  @dossier /research Acme Corp https://acme.com
-  ```
-  Results stream back inline with a button to open the generated dossier.
-- **Command Palette** (`Ctrl/Cmd+Shift+P`):
-  - **Dossier: Research Company** — prompts for name + URL, then runs the full pipeline.
-  - **Dossier: New Entity Profile** — scaffolds a profile (person, supplier, competitor, client, product) into the right section.
-
-**Optional AI synthesis:** add your key in Settings → **Company Dossier → Anthropic API Key**
-(`companyDossier.anthropicApiKey`). Without a key, data is still collected and written; only
-the LLM synthesis step is skipped. Tune crawl depth with `companyDossier.maxPages`.
-
-## Output
-
-Each run creates a `"<Company> DOSSIER/"` folder in your workspace:
+### Repository layout
 
 ```
-<Company> DOSSIER/
-├── README.md               ← Landing page
-├── ROUTER.md               ← AI-agent navigation (question → file)
-├── CHANGELOG.md
-├── _meta/                  ← Methodology, confidence scale
-├── _data/                  ← Structured data (CSVs)
-├── _assets/                ← Photos & PDFs
-├── _evidence/              ← Raw source data
-├── 1_corporate/            ← Identity, legal, tech stack, contacts
-├── 2_people/profiles/      ← One file per person
-├── 3_products/             ← Products, services, pricing
-├── 4_suppliers/profiles/   ← One file per supplier
-├── 5_customers/            ← Clients, prospects
-├── 6_competitors/profiles/ ← One file per competitor
-├── 7_financials/           ← Revenue, valuation, federal contracts
-├── 8_marketing/            ← Social, events, press
-├── 9_brand/                ← Visual identity
-├── 10_timeline/            ← History, website evolution
-├── 11_analysis/            ← Executive brief, SWOT, key findings
-└── 12_industry/            ← Market context
+src/extension.ts        Activation, commands, chat participant registration
+src/agent.ts            Orchestrator — runs the seven research phases
+src/sidebar/            Webview provider: the input form and live progress
+src/collectors/         website · wayback · dns · techstack · search (read-only)
+src/generators/         scaffold (folder tree + _MOC) · corporate · router (ROUTER.md)
+src/types.ts            Shared types across collectors and generators
+snippets/               Markdown frontmatter snippets for hand-written dossier files
+docs/ARCHITECTURE.md    Collector → generator flow and pipeline phases
 ```
 
-Every file carries YAML frontmatter (type, confidence, last-updated). With an API key, the
-analysis section is populated with an executive brief, SWOT, key findings, and a
-manual-research checklist.
+## Configuration
 
-## Works with
+| Setting | Required | Default | Purpose |
+|---|---|---|---|
+| `companyDossier.anthropicApiKey` | No | empty | Enables the LLM synthesis step; without it, data is still collected and written |
+| `companyDossier.maxPages` | No | `50` | Maximum pages crawled from the target's sitemap |
 
-Company Dossier is one part of a larger ecosystem:
+The key is read from your VS Code settings and used only to call Anthropic from your machine.
+Nothing is sent anywhere else — the extension has no backend.
 
-- **Website** — [companydossier.lol](https://companydossier.lol)
-- **npm package** — [`company-dossier`](https://www.npmjs.com/package/company-dossier) — run the same research from your terminal:
-  ```bash
-  npx company-dossier <company>
-  ```
-- **Core repo & methodology** — [github.com/ever-just/company-dossier](https://github.com/ever-just/company-dossier)
+## Related
 
-## Documentation
-
-- [Architecture](./docs/ARCHITECTURE.md) — the collector → generator flow and pipeline phases.
-- [AGENTS.md](./AGENTS.md) — how an AI agent should understand and extend this repo.
-- [Contributing](./CONTRIBUTING.md) · [Code of Conduct](./CODE_OF_CONDUCT.md) · [Security](./SECURITY.md) · [Changelog](./CHANGELOG.md)
+The same research engine ships as a website, a CLI, a library and an MCP server in
+[ever-just/company-dossier](https://github.com/ever-just/company-dossier) — `npx company-dossier
+acme.com` produces the terminal equivalent of this extension's output.
 
 ## License
 
-[MIT](./LICENSE) © EverJust
+[MIT](LICENSE) · by EVERJUST. Public information only — a dossier is a starting map, not a
+verdict. [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md)
