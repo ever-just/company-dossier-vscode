@@ -9,12 +9,34 @@ function getAnthropicApiKey(): string {
   return vscode.workspace.getConfiguration('companyDossier').get<string>('anthropicApiKey', '');
 }
 
+/** Read the configured Anthropic model. */
+function getModel(): string {
+  return vscode.workspace.getConfiguration('companyDossier').get<string>('model', 'claude-haiku-4-5');
+}
+
 export function activate(context: vscode.ExtensionContext): void {
 
-  // === SIDEBAR WEBVIEW ===
-  const sidebarProvider = new DossierSidebarProvider(context.extensionUri);
+  // === DEV LOGS ===
+  // LogOutputChannel gives timestamped info/warn/error lines in
+  // Output → "Company Dossier". Everything the pipeline does is logged here.
+  const log = vscode.window.createOutputChannel('Company Dossier', { log: true });
+  context.subscriptions.push(log);
+  log.info(`Company Dossier activated (v${context.extension?.packageJSON?.version ?? '?'})`);
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(DossierSidebarProvider.viewType, sidebarProvider)
+    vscode.commands.registerCommand('companyDossier.showLogs', () => log.show(true))
+  );
+
+  // === SIDEBAR WEBVIEW ===
+  const sidebarProvider = new DossierSidebarProvider(context.extensionUri, log);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      DossierSidebarProvider.viewType,
+      sidebarProvider,
+      // Keep the webview's DOM/state alive when the view is hidden (user switches
+      // to another activity-bar view and back). Without this, VS Code disposes the
+      // webview and resolveWebviewView re-runs with fresh HTML, wiping all state.
+      { webviewOptions: { retainContextWhenHidden: true } }
+    )
   );
 
   // === CHAT PARTICIPANT (for Copilot users) ===
@@ -48,7 +70,7 @@ export function activate(context: vscode.ExtensionContext): void {
         const apiKey = getAnthropicApiKey();
         stream.progress(`Starting deep research on ${companyName}...${apiKey ? ' (AI analysis enabled)' : ' (no API key — template mode)'}`);
 
-        const input: ResearchInput = { companyName, url, depth: 'standard', apiKey: apiKey || undefined };
+        const input: ResearchInput = { companyName, url, depth: 'standard', apiKey: apiKey || undefined, model: getModel() };
         const result = await runResearch(input, root, (msg) => {
           stream.progress(msg);
         });
@@ -57,28 +79,24 @@ export function activate(context: vscode.ExtensionContext): void {
         stream.markdown(`# ${companyName} — Dossier Generated\n\n`);
         stream.markdown(`**${result.filesCreated} files** created in \`${companyName} DOSSIER/\`\n\n`);
 
+        // Intelligence summary
+        const c = result.counts;
+        stream.markdown(`## Intelligence Extracted\n| Finding | Count |\n|---------|-------|\n| Team members | ${c.people} |\n| Products/services | ${c.products} |\n| Client case studies | ${c.caseStudies} |\n| Partners | ${c.partners} |\n| Emails | ${c.emails} |\n| Social profiles | ${c.socialProfiles} |\n| Gov contracts | ${c.govContracts} |\n\n`);
+
         if (result.websiteData) {
-          stream.markdown(`## Website\n- **Title:** ${result.websiteData.title}\n- **Description:** ${result.websiteData.description}\n- **Pages crawled:** ${result.websiteData.pageCount}\n- **Sitemap URLs:** ${result.websiteData.sitemapUrls.length}\n- **Emails found:** ${result.websiteData.allEmails?.length || 0}\n- **Phones found:** ${result.websiteData.allPhones?.length || 0}\n\n`);
+          stream.markdown(`## Website\n- **Title:** ${result.websiteData.title}\n- **Pages crawled:** ${result.websiteData.pageCount}\n- **Sitemap URLs:** ${result.websiteData.sitemapUrls.length}\n\n`);
         }
 
         if (result.waybackData && !result.waybackData.error) {
-          stream.markdown(`## Wayback Machine\n- **Captures:** ${result.waybackData.totalCaptures}\n- **Unique URLs:** ${result.waybackData.uniqueUrls.length}\n- **PDFs Found:** ${result.waybackData.pdfUrls.length}\n- **Deleted Pages:** ${result.waybackData.deletedPages.length}\n${result.waybackData.siteGrowthSummary ? `- **Growth:** ${result.waybackData.siteGrowthSummary}\n` : ''}\n`);
-        }
-
-        if (result.dnsData && !result.dnsData.error) {
-          stream.markdown(`## Email & DNS\n- **Provider:** ${result.dnsData.emailProvider}\n- **SPF:** ${result.dnsData.spfRecord ? 'Yes' : 'No'}\n- **DMARC:** ${result.dnsData.dmarcRecord ? 'Yes' : 'No'}\n- **Subdomains:** ${result.dnsData.subdomains.length}\n\n`);
+          stream.markdown(`## Wayback Machine\n- **Captures:** ${result.waybackData.totalCaptures}\n- **PDFs Found:** ${result.waybackData.pdfUrls.length}\n- **Deleted Pages:** ${result.waybackData.deletedPages.length}\n\n`);
         }
 
         if (result.techData) {
-          stream.markdown(`## Tech Stack\n- **CMS:** ${result.techData.cms}\n- **Analytics:** ${result.techData.analyticsIds.join(', ') || 'None detected'}\n- **Ad Pixels:** ${result.techData.adPixels.join(', ') || 'None detected'}\n- **Frameworks:** ${result.techData.frameworks.join(', ') || 'None detected'}\n\n`);
-        }
-
-        if (result.searchData) {
-          stream.markdown(`## Public Search\n- **Federal Contracts:** ${result.searchData.usaSpendingContracts.length} (${result.searchData.usaSpendingAwards} total awards, $${Math.round(result.searchData.usaSpendingTotal).toLocaleString()})\n- **Social Profiles:** ${result.searchData.socialProfiles.length}\n\n`);
+          stream.markdown(`## Tech Stack\n- **CMS:** ${result.techData.cms}\n- **Analytics:** ${result.techData.analyticsIds.join(', ') || 'None detected'}\n- **Frameworks:** ${result.techData.frameworks.join(', ') || 'None detected'}\n\n`);
         }
 
         if (result.llmSynthesis) {
-          stream.markdown(`## AI Analysis\n- Executive Brief: generated\n- SWOT Analysis: generated\n- Key Findings: generated\n- Manual Research Recommendations: generated\n\n`);
+          stream.markdown(`## AI Research\n- ${result.llmSynthesis.sections.length} research sections generated\n- Executive Brief, Key Findings, SWOT: generated\n`);
         }
 
         if (result.errors.length > 0) {
@@ -145,8 +163,10 @@ export function activate(context: vscode.ExtensionContext): void {
         title: `Researching ${companyName}...`,
         cancellable: false
       }, async (progress) => {
-        const input: ResearchInput = { companyName, url, depth: 'standard', apiKey: apiKey || undefined };
+        const input: ResearchInput = { companyName, url, depth: 'standard', apiKey: apiKey || undefined, model: getModel() };
+        log.info(`Research (command): "${companyName}" <${url}> apiKey=${apiKey ? 'set' : 'MISSING'} model=${getModel()}`);
         const result = await runResearch(input, root, (msg) => {
+          log.appendLine(msg);
           progress.report({ message: msg });
         });
 

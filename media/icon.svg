@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Magnifying glass body -->
+  <circle cx="10" cy="10" r="6.5" />
+  <line x1="14.5" y1="14.5" x2="20" y2="20" stroke-width="2" />
+  <!-- Network nodes inside glass -->
+  <circle cx="8" cy="8.5" r="1" fill="currentColor" stroke="none" />
+  <circle cx="12" cy="8.5" r="1" fill="currentColor" stroke="none" />
+  <circle cx="10" cy="12" r="1" fill="currentColor" stroke="none" />
+  <!-- Connections -->
+  <line x1="8.8" y1="8.8" x2="9.5" y2="11.2" stroke-width="0.7" />
+  <line x1="11.2" y1="8.8" x2="10.5" y2="11.2" stroke-width="0.7" />
+  <line x1="9" y1="8.5" x2="11" y2="8.5" stroke-width="0.7" />
+  <!-- Small document indicator -->
+  <path d="M17 3h3v5h-3" stroke-width="1" />
+  <path d="M17 3l3 0" stroke-width="1" />
+  <line x1="18" y1="5" x2="19.5" y2="5" stroke-width="0.7" />
+  <line x1="18" y1="6.5" x2="19.5" y2="6.5" stroke-width="0.7" />
+</svg>

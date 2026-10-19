@@ -39,7 +39,16 @@ export async function fetchText(url: string, timeoutMs = 10000): Promise<string>
   try {
     const resp = await fetch(url, {
       signal: controller.signal,
-      headers: { 'User-Agent': 'CompanyDossier/1.0 (VS Code Extension)' }
+      redirect: 'follow',
+      headers: {
+        // Browser-like headers get past many lightweight bot filters that 403
+        // a generic agent string. Sites with real anti-bot (RentCafe/Yardi,
+        // Cloudflare challenges) still block this — those are covered by the
+        // LLM's web_search fallback in llm.ts.
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+      }
     });
     if (!resp.ok) { throw new Error(`HTTP ${resp.status}`); }
     return await resp.text();
